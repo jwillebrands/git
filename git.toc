@@ -1,0 +1,7 @@
+## Interface: 20400
+## Title: Gotai's Instance Timer
+## Notes: For even more epeen!
+## Author: Gotai
+## Version: Beta1
+## SavedVariables: GIT_Records
+git.lua
