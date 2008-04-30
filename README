@@ -15,7 +15,7 @@ Unfortunately, due to the saved var overhaul, Beta1 records will not be imported
 If you wish to save them, write the values down, and once you've upgraded run:
 /run GIT_Records[zone][difficulty][time] = seconds
 for each entry. zone, difficulty and seconds have to be replaced by their proper values.
-zone accepts "normal" or "heroic". So for instance, for my heroic SP run that took 1.5 hours:
+difficulty accepts "normal" or "heroic". So for instance, for my heroic SP run that took 1.5 hours:
 /run GIT_Records["The Slave Pens"]["heroic"][time] = 5400
 
 Sorry for the inconvenience, but I didn't see another way. It'll be a one time thing though. :)
