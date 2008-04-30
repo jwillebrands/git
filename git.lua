@@ -1,5 +1,4 @@
 local GIT_LastBoss = {
-	["Terokkar Forest"] = "Dampscale Basilisk",
 	--Outlands dungeons.
 	--Hellfire Citadel
 	["Hellfire Ramparts"] = "Nazan",
@@ -56,6 +55,11 @@ local function GIT_OnEvent(timestamp, subevent, sourceGUID, sourceName, sourceFl
 			--Work complete. Show time.
 			local total = GetTime() - starttime
 			starttime = nil
+			
+			--No more event monitoring has to be done.
+			frame:UnRegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+			
+			--Check if new record has been achieved.
 			if (not GIT_Records[zone]) then
 				GIT_Print(string.format("New record for %s: %s",zone, ReturnHHMMSS(total)))
 				GIT_Records[zone] = total
