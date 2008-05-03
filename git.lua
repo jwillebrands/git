@@ -1,50 +1,50 @@
 local GIT_LastBoss = {
+	["Terokkar Forest"] = 18461,
+	--Changed to mobIDs to rule out errors.
+	
 	--Outlands dungeons.
 	--Hellfire Citadel
-	["Hellfire Ramparts"] = "Nazan",
-	["The Blood Furnace"] = "Keli'dan the Breaker",
-	["The Shattered Halls"] = "Warchief Kargath Bladefist",
+	["Hellfire Ramparts"] = 17536,
+	["The Blood Furnace"] = 17377,
+	["The Shattered Halls"] = 16808,
 	
 	--Coilfang Reservoir
-	["The Slave Pens"] = "Quagmirran",
-	["The Underbog"] = "The Black Stalker",
-	["The Steamvault"] = "Warlord Kalithresh",	
+	["The Slave Pens"] = 17942,
+	["The Underbog"] = 17882,
+	["The Steamvault"] = 17798,	
 	
 	--Auchindoun
-	["Auchenai Crypts"] = "Exarch Maladaar",
-	["Mana-Tombs"] = "Nexus-Prince Shaffar",
-	["Sethekk Halls"] = "Talon King Ikiss",
-	["Shadow Labyrinth"] = "Murmur",
+	["Auchenai Crypts"] = 18373,
+	["Mana-Tombs"] = 18344,
+	["Sethekk Halls"] = 18473,
+	["Shadow Labyrinth"] = 18708,
 	
 	--Caverns of Time
-	["Old Hillsbrad Foothills"] = "Epoch Hunter",
-	["The Black Morass"] = "Aeonus",
+	["Old Hillsbrad Foothills"] = 18096,
+	["The Black Morass"] = 17881,
 	
 	--Tempest Keep
-	["The Mechanar"] = "Pathaleon the Calculator",
-	["The Botanica"] = "Warp Splinter",
-	["The Arcatraz"] = "Harbinger Skyriss",
+	["The Mechanar"] = 19220,
+	["The Botanica"] = 17977,
+	["The Arcatraz"] = 20912,
 	
 	--Magister's Terrace
-	["Magisters' Terrace"] = "Kael'thas Sunstrider",
+	["Magisters' Terrace"] = 24664,
 	
 	--10 man Raids
-	["Zul'Gurub"] = "Hakkar",
-	["Karazhan"] = "Prince Malchezaar",
-	["Zul'Aman"] = "Zul'jin",
+	["Zul'Gurub"] = 14834,
+	["Karazhan"] = 15690,
+	["Zul'Aman"] = 23863,
 }
 --Create Records table, will be overwritten by SavedVars record table if there is one.
 GIT_Records = {}
 
 --Declare some locals we'll need throughout the addon.
-local starttime, difficulty
-
---Create our frame and register the event we're interested in.
-local frame = CreateFrame("Frame",nil,UIParent)
-frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+local starttime, difficulty, lastupdate
+local GetTime = GetTime
 
 --Return HH:MM:SS from seconds, rounding up seconds.
-local function ReturnHHMMSS(seconds)
+local function SecondsToHHMMSS(seconds)
 	local hh = math.floor(seconds/3600)
 	local mm = math.floor((seconds-hh*3600)/60)
 	local ss = ceil(seconds-hh*3600-mm*60)
@@ -54,6 +54,41 @@ end
 --Fancy prefix and less typing. ^^
 local function GIT_Print(msg)
 	return DEFAULT_CHAT_FRAME:AddMessage("|cffffff78GIT|r - "..msg)
+end
+
+--Create our frame and register the event we're interested in.
+local frame = CreateFrame("Frame","GITFrame",UIParent)
+frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+--We set the width later so it changes dynamically depending on instance text.
+frame:SetHeight(16)
+frame:SetMovable()
+frame:EnableMouse()
+frame:RegisterForDrag("LeftButton")
+frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+frame:SetUserPlaced(true)
+frame:RegisterEvent("VARIABLES_LOADED")
+
+--Yay we're gonna have a visible timer! \o/
+local instancetext = frame:CreateFontString("GITFrameInstance", "OVERLAY")
+instancetext:SetPoint("TOP", frame, "TOP")
+instancetext:SetFont(STANDARD_TEXT_FONT, 12, "OUTLINE")
+
+
+local timertext = frame:CreateFontString("GITTimerText", "OVERLAY")
+timertext:SetPoint("TOP", frame, "BOTTOM")
+timertext:SetFont(STANDARD_TEXT_FONT, 12)
+
+--Update frame's dimensions whenever it's shown.
+frame:SetScript("OnShow", function(self) self:SetWidth(max(instancetext:GetWidth(), timertext:GetWidth())) self:SetHeight(instancetext:GetHeight() + timertext:GetHeight()) end)
+
+local function GIT_OnUpdate()
+	--We don't really care about milliseconds, so we'll just update the frame once per second.
+	if (not lastupdate or GetTime() - lastupdate > 1) then
+		--Set timer text.
+		timertext:SetText(SecondsToHHMMSS(GetTime() - starttime)..(GIT_Records[instancetext:GetText()] and GIT_Records[instancetext:GetText()][difficulty] and GIT_Records[instancetext:GetText()][difficulty].time and " / "..SecondsToHHMMSS(GIT_Records[instancetext:GetText()][difficulty].time) or ""))
+		lastupdate = GetTime()
+	end
 end
 
 --Function that saves party layout to Saved Var.
@@ -76,28 +111,29 @@ local function GIT_OnEvent(event, timestamp, subevent, sourceGUID, sourceName, s
 		if (subevent == "UNIT_DIED") then
 			local zone = GetRealZoneText()
 			--If the unit that died is the last boss of that zone, end the timer 
-			if (GIT_LastBoss[zone] == destName) then
+			if (GIT_LastBoss[zone] == tonumber(destGUID:sub(6,12),16)) then
 				--Work complete. Show time.
 				local total = GetTime() - starttime
 				starttime = nil
 				
-				--Done with combat log monitoring, reset to monitoring zone changes.
+				--Done with combat log monitoring, reset to monitoring zone changes. Also stop the frame's OnUpdate.
 				frame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+				frame:SetScript("OnUpdate",nil)
 				
 				--Check if new record has been achieved.
 				if (not GIT_Records[zone] or type(GIT_Records[zone]) ~= "table" or not GIT_Records[zone][difficulty]) then
-					GIT_Print(string.format("New record for %s (%s): %s",zone, difficulty,  ReturnHHMMSS(total)))
+					GIT_Print(string.format("New record for %s (%s): %s",zone, difficulty,  SecondsToHHMMSS(total)))
 					
 					--Create table values.
 					GIT_Records[zone] = {[difficulty] = {["time"] = total}}
 					GIT_SaveParty(zone, difficulty)
 				else
 					if GIT_Records[zone][difficulty].time > total then
-						GIT_Print(string.format("New record for %s (%s): %s! You were %s faster than the previous record!", zone, difficulty, ReturnHHMMSS(total), ReturnHHMMSS(GIT_Records[zone][difficulty].time-total)))
+						GIT_Print(string.format("New record for %s (%s): %s! You were %s faster than the previous record!", zone, difficulty, SecondsToHHMMSS(total), SecondsToHHMMSS(GIT_Records[zone][difficulty].time-total)))
 						GIT_Records[zone][difficulty].time = total
 						GIT_SaveParty(zone, difficulty)
 					else
-						GIT_Print(string.format("The old record of %s still stands. It took you %s longer this time.", ReturnHHMMSS(GIT_Records[zone][difficulty].time), ReturnHHMMSS(total-GIT_Records[zone][difficulty].time)))
+						GIT_Print(string.format("The old record of %s still stands. It took you %s longer this time.", SecondsToHHMMSS(GIT_Records[zone][difficulty].time), SecondsToHHMMSS(total-GIT_Records[zone][difficulty].time)))
 					end
 				end
 			end
@@ -107,10 +143,19 @@ local function GIT_OnEvent(event, timestamp, subevent, sourceGUID, sourceName, s
 		if (not starttime and GIT_LastBoss[GetRealZoneText()]) then
 			--Set difficulty to current dungeon difficulty. (1. normal, 2. heroic)
 			difficulty = (GetCurrentDungeonDifficulty() == 2 and "heroic" or "normal")
-			ChatFrame1:AddMessage(difficulty)
 			GIT_Print(string.format("Timer for %s (%s) started. Good luck!", GetRealZoneText(), difficulty))
 			starttime = GetTime()
 			frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+			
+			--Set frame text to current instance and initiate frame's OnUpdate.
+			instancetext:SetText(GetRealZoneText())
+			frame:SetWidth(instancetext:GetWidth())
+			frame:SetScript("OnUpdate", GIT_OnUpdate)
+		end
+	elseif (event == "VARIABLES_LOADED") then
+		--If frame has no known position set it to center of screen.
+		if (not frame:GetPoint()) then
+			frame:SetPoint("CENTER")
 		end
 	end
 end
@@ -126,6 +171,7 @@ local function GIT_Slash(msg)
 			--Reset starttime, register for zone change event.
 			GIT_Print("Timer stopped.")
 			starttime = nil
+			frame:SetScript("OnUpdate", nil)
 		else
 			GIT_Print("Unrecognised command ("..msg.."), valid commands are: stop")
 		end
