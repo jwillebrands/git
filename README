@@ -3,6 +3,13 @@ Gotai's Instance Timer
 Simple timer to boast about in guild for moar epeen.
 
 **Changelog:
+Beta2 -> Beta2.1
+Checking mobID instead of mobname for registering kills. Hopefuly fixes Ramparts bug. Feedback needed!
+Added a visual timer.
+
+More slash commands will come next push, just wanted to get this out here to see if it fixes Ramparts.
+
+
 Beta1 -> Beta2
 
 GIT should now start timers automatically when you enter combat in a zone that is in GIT's list.
