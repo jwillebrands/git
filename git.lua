@@ -1,5 +1,5 @@
 local GIT_LastBoss = {
-	["Terokkar Forest"] = 18461,
+	--["Terokkar Forest"] = 18461,
 	--Changed to mobIDs to rule out errors.
 	
 	--Outlands dungeons.
