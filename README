@@ -3,6 +3,14 @@ Gotai's Instance Timer
 Simple timer to boast about in guild for moar epeen.
 
 **Changelog:
+Beta 2.1 -> Beta 2.2
+Timer is now colored depending on how close to the record you are.
+Also added some more slash commands:
+/git stop - Stops the timer, doesn't save anything. Use this for aborted runs.
+/git save - Stops and saves the timer. Use this if the timer doesn't autostop/save for some reason.
+/git toggle - Toggles visibility of the timer.
+/git debug - Enables logging a Dampscale Basilisk in Terokkar Forest. You shouldn't have to use this unless you're trying to recreate an error.
+
 Beta2 -> Beta2.1
 Checking mobID instead of mobname for registering kills. Hopefuly fixes Ramparts bug. Feedback needed!
 Added a visual timer.
