@@ -126,7 +126,7 @@ local function ToggleTimer()
 	end
 end
 
-local function GIT_OnUpdate(elapsed,zone,difficulty,record)
+local function GIT_OnUpdate(elapsed,zone,record)
 	lastupdate = lastupdate + elapsed
 	--We don't really care about milliseconds, so we'll just update the frame once per second.
 	if (lastupdate >= 1) then
@@ -217,7 +217,7 @@ local function GIT_OnEvent(event, timestamp, subevent, sourceGUID, sourceName, s
 			--Set frame text to current instance and initiate frame's OnUpdate.
 			instancetext:SetText(GetRealZoneText())
 			frame:SetWidth(instancetext:GetWidth())
-			frame:SetScript("OnUpdate", function(self,elapsed) GIT_OnUpdate(elapsed,zone,difficulty,GIT_Records[zone][difficulty] and GIT_Records[zone][difficulty].time or nil) end)
+			frame:SetScript("OnUpdate", function(self,elapsed) GIT_OnUpdate(elapsed,zone,GIT_Records[zone] and GIT_Records[zone][difficulty] and GIT_Records[zone][difficulty].time or nil) end)
 		end
 	elseif (event == "VARIABLES_LOADED") then
 		--If frame has no known position set it to center of screen.
