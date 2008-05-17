@@ -3,7 +3,7 @@ local GIT_LastBoss = {
 	
 	--Outlands dungeons.
 	--Hellfire Citadel
-	["Hellfire Ramparts"] = 17536,
+	["Hellfire Ramparts"] = 17307, --Nazan keeps Vazruden the Herald's mobID.
 	["The Blood Furnace"] = 17377,
 	["The Shattered Halls"] = 16808,
 	
@@ -163,7 +163,7 @@ end
 
 --Stop timer and evaluate record.
 local function EvalTimer(zone)
-	if (not zone) then
+	if (not zone or zone == "") then
 		zone = GetRealZoneText()
 	end
 	if (not GIT_LastBoss[zone]) then
