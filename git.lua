@@ -83,13 +83,14 @@ local frame = CreateFrame("Frame","GITFrame",UIParent)
 frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 --We set the width later so it changes dynamically depending on instance text.
 frame:SetHeight(16)
+frame:SetWidth(1)
 frame:SetMovable()
 frame:EnableMouse()
 frame:RegisterForDrag("LeftButton")
 frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
 frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
 frame:SetUserPlaced(true)
-frame:RegisterEvent("VARIABLES_LOADED")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 --Yay we're gonna have a visible timer! \o/
 local instancetext = frame:CreateFontString("GITFrameInstance", "OVERLAY")
@@ -219,7 +220,7 @@ local function GIT_OnEvent(event, timestamp, subevent, sourceGUID, sourceName, s
 			frame:SetWidth(instancetext:GetWidth())
 			frame:SetScript("OnUpdate", function(self,elapsed) GIT_OnUpdate(elapsed,zone,GIT_Records[zone] and GIT_Records[zone][difficulty] and GIT_Records[zone][difficulty].time or nil) end)
 		end
-	elseif (event == "VARIABLES_LOADED") then
+	elseif (event == "PLAYER_ENTERING_WORLD") then
 		--If frame has no known position set it to center of screen.
 		if (not frame:GetPoint()) then
 			frame:SetPoint("CENTER")
