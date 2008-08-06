@@ -2,6 +2,6 @@
 ## Title: Gotai's Instance Timer
 ## Notes: For even more epeen!
 ## Author: Gotai
-## Version: Beta 2.2
+## Version: 1.1
 ## SavedVariables: GIT_Records
 git.lua

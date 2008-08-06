@@ -3,6 +3,12 @@ Gotai's Instance Timer
 Simple timer to boast about in guild for moar epeen.
 
 **Changelog:
+1.0 -> 1.1
+Started work on a showrecords function. It seems to be working now, although I'm not sure if I'm happy with how it turned out.
+
+Beta -> 1.0
+Two months of no bugs warrants a push to 1.0 I reckon. Yay!
+
 Beta 2.1 -> Beta 2.2
 Timer is now colored depending on how close to the record you are.
 Also added some more slash commands:

@@ -43,6 +43,7 @@ local GITDebug = false
 local starttime, difficulty
 local lastupdate = 0
 local GetTime = GetTime
+local reftable
 
 -- *** Utility functions ***
 --Return HH:MM:SS from seconds, rounding up seconds.
@@ -76,6 +77,21 @@ local function ConcatTableKeys(t, seperator)
 		end
 	end
 	return text
+end
+
+--Get amount of keys in associative table.
+local function GetAssocTableKeys(t)
+	local num=0
+	for k,v in pairs(t) do
+		num = num+1
+	end
+	return num
+end
+
+--Create color escape sequence (|caarrggbb) from CLASS
+local function GenerateColorSequence(class)
+	local r,g,b = RAID_CLASS_COLORS[class].r, RAID_CLASS_COLORS[class].g, RAID_CLASS_COLORS[class].b
+	return string.format("|cff%02x%02x%02x", r*255,g*255,b*255)
 end
 
 --Create our frame and register the event we're interested in.
@@ -239,7 +255,60 @@ local function EnableDebug()
 	else
 		GITDebug = false
 		GIT_LastBoss["Terokkar Forest"] = nil
-		return GIT_Print("Debugging enabled.")
+		return GIT_Print("Debugging disabled.")
+	end
+end
+
+--Generate reference table for records.
+local function GenerateRefTable()
+	reftable = {}
+	for k,v in pairs(GIT_Records) do
+		for x,y in pairs(v) do
+			reftable[#reftable+1] = k.." - "..x
+		end
+	end
+end
+
+--Generate record
+local function GenerateRecord(input)
+	if (not reftable or #reftable ~= GetAssocTableKeys(GIT_Records)) then
+		GenerateRefTable()
+	end
+	zone,difficulty = input:match("^(.*) %- (.*)")
+	local name,localclass,class = GIT_Records[zone][difficulty].playername, strsplit(",",GIT_Records[zone][difficulty].playerclass)
+	local output = string.format("%s (%s): %s. Set by: %s%s (%s)|r, ", zone, difficulty, SecondsToHHMMSS(GIT_Records[zone][difficulty].time), GenerateColorSequence(class), name, localclass)
+	for i=1,4 do
+		name = GIT_Records[zone][difficulty]["party"..i.."name"]
+		if (name) then
+			localclass, class = strsplit(",",GIT_Records[zone][difficulty]["party"..i.."class"])
+		else
+			break
+		end
+		output = output .. string.format("%s%s (%s), |r", GenerateColorSequence(class), name, localclass)
+	end
+	return output
+end
+
+--Output record
+local function ShowRecord(msg)
+	if (not reftable or #reftable ~= GetAssocTableKeys(GIT_Records)) then
+		GenerateRefTable()
+	end
+	if (msg == "") then
+		for i,v in ipairs(reftable) do
+			GIT_Print("/git showrecord "..i.." - "..v)
+		end
+	else
+		sel = tonumber(msg)
+		if (sel) then
+			if (reftable[sel]) then
+				GIT_Print(GenerateRecord(reftable[sel]))
+			else
+				GIT_Print("Number not found in reference table:".. sel)
+			end
+		else
+			GIT_Print("Invalid input:".. msg)
+		end
 	end
 end
 
@@ -249,7 +318,7 @@ end
 local SlashCommands = {
 	save = EvalTimer,
 	stop = StopTimer,
-	--showrecord = ShowRecord,
+	showrecord = ShowRecord,
 	toggle = ToggleTimer,
 	debug = EnableDebug,
 }
