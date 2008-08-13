@@ -34,6 +34,17 @@ local GIT_LastBoss = {
 	["Zul'Gurub"] = 14834,
 	["Karazhan"] = 15690,
 	["Zul'Aman"] = 23863,
+	
+	--25 man raids
+	["Serpentshrine Cavern"] = 21212,
+	["The Eye"] = 19622,
+	["Hyjal Summit"] = 17968,
+	["Black Temple"] = 22917,
+	["Sunwell Plateau"] = 25315,
+	
+	["Magtheridon's Lair"] = 17257,
+	["Gruul's Lair"] = 19044,
+	
 }
 --Create Records table, will be overwritten by SavedVars record table if there is one.
 GIT_Records = {}
@@ -44,6 +55,19 @@ local starttime, difficulty
 local lastupdate = 0
 local GetTime = GetTime
 local reftable
+
+--List of valid channels for report function
+local ValidChan = {
+	["guild"] = "GUILD",
+	["/g"] = "GUILD",
+	["g"] = "GUILD",
+	["party"] = "PARTY",
+	["/p"] = "PARTY",
+	["p"] = "PARTY",
+	["raid"] = "RAID",
+	["/r"] = "RAID",
+	["r"] = "RAID",
+}
 
 -- *** Utility functions ***
 --Return HH:MM:SS from seconds, rounding up seconds.
@@ -124,12 +148,10 @@ local function GIT_SaveParty(zone, difficulty)
 	GIT_Records[zone][difficulty]["playerclass"] = strjoin(",",UnitClass("player"))
 	
 	--Update party members. Saving localised class for display and not localised for coloring.
-	if GetNumPartyMembers() > 0 then
-		for i=1, 4 do
-			local name = UnitName("party"..i)
-			GIT_Records[zone][difficulty]["party"..i.."name"] = name
-			GIT_Records[zone][difficulty]["party"..i.."class"] = (name and strjoin(",", UnitClass("party"..i)) or nil)
-		end
+	for i=1, GetNumPartyMembers() do
+		local name = UnitName("party"..i)
+		GIT_Records[zone][difficulty]["party"..i.."name"] = name
+		GIT_Records[zone][difficulty]["party"..i.."class"] = (name and strjoin(",", UnitClass("party"..i)) or nil)
 	end
 end
 
@@ -181,7 +203,8 @@ end
 --Stop timer and evaluate record.
 local function EvalTimer(zone)
 	if (not zone or zone == "") then
-		zone = GetRealZoneText()
+		--Function was called from slash command, get instance name from frame.
+		zone = instancetext:GetText()
 	end
 	if (not GIT_LastBoss[zone]) then
 		return GIT_Print("Unkown zone ("..zone.."), could not save record.")
@@ -199,7 +222,11 @@ local function EvalTimer(zone)
 		GIT_Print(string.format("New record for %s (%s): %s",zone, difficulty,  SecondsToHHMMSS(total)))
 		
 		--Create table values.
-		GIT_Records[zone] = {[difficulty] = {["time"] = total}}
+		if GIT_Records[zone] then 
+			GIT_Records[zone][difficulty] = {["time"] = total}
+		else
+			GIT_Records[zone] = {[difficulty] = {["time"] = total}}
+		end
 		GIT_SaveParty(zone, difficulty)
 	else
 		if GIT_Records[zone][difficulty].time > total then
@@ -269,22 +296,22 @@ local function GenerateRefTable()
 	end
 end
 
---Generate record
-local function GenerateRecord(input)
+--Generate record. If override is given, no color codes are used so output can be sent to chat channels.
+local function GenerateRecord(input,override)
 	if (not reftable or #reftable ~= GetAssocTableKeys(GIT_Records)) then
 		GenerateRefTable()
 	end
 	zone,difficulty = input:match("^(.*) %- (.*)")
 	local name,localclass,class = GIT_Records[zone][difficulty].playername, strsplit(",",GIT_Records[zone][difficulty].playerclass)
-	local output = string.format("%s (%s): %s. Set by: %s%s (%s)|r, ", zone, difficulty, SecondsToHHMMSS(GIT_Records[zone][difficulty].time), GenerateColorSequence(class), name, localclass)
-	for i=1,4 do
+	local output = string.format("Current record for %s (%s): %s. Set by: %s%s (%s)%s", zone, difficulty, SecondsToHHMMSS(GIT_Records[zone][difficulty].time), override and "" or GenerateColorSequence(class), name, localclass, override and "" or "|r")
+	for i=1,24 do
 		name = GIT_Records[zone][difficulty]["party"..i.."name"]
 		if (name) then
 			localclass, class = strsplit(",",GIT_Records[zone][difficulty]["party"..i.."class"])
 		else
 			break
 		end
-		output = output .. string.format("%s%s (%s), |r", GenerateColorSequence(class), name, localclass)
+		output = output .. string.format(", %s%s (%s)%s", override and "" or GenerateColorSequence(class), name, localclass, override and "" or "|r")
 	end
 	return output
 end
@@ -304,7 +331,7 @@ local function ShowRecord(msg)
 			if (reftable[sel]) then
 				GIT_Print(GenerateRecord(reftable[sel]))
 			else
-				GIT_Print("Number not found in reference table:".. sel)
+				GIT_Print("Number not found in reference table: " .. sel)
 			end
 		else
 			GIT_Print("Invalid input:".. msg)
@@ -312,6 +339,35 @@ local function ShowRecord(msg)
 	end
 end
 
+--Report record
+local function ReportRecord(msg)
+	if (not reftable or #reftable ~= GetAssocTableKeys(GIT_Records)) then
+		GenerateRefTable()
+	end
+	if (msg == "") then
+		for i,v in ipairs(reftable) do
+			GIT_Print("/git report "..i.." - "..v)
+		end
+	else
+		sel,channel = GetCmd(msg)
+		sel = tonumber(sel)
+		channel = channel:lower()
+		if (sel) then
+			if (reftable[sel]) then
+				--Check if specified channel is allowed
+				if ValidChan[channel] then
+					SendChatMessage(GenerateRecord(reftable[sel],true), ValidChan[channel])
+				else
+					GIT_Print("Invalid channel: "..channel)
+				end
+			else
+				GIT_Print("Number not found in reference table: " .. sel)
+			end
+		else
+			GIT_Print("Invalid input. Number expected, got: "..GetCmd(msg))
+		end
+	end
+end
 
 -- *** Slash Command setup ***
 --Command table for slash handler.
@@ -319,6 +375,7 @@ local SlashCommands = {
 	save = EvalTimer,
 	stop = StopTimer,
 	showrecord = ShowRecord,
+	report = ReportRecord,
 	toggle = ToggleTimer,
 	debug = EnableDebug,
 }

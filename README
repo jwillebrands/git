@@ -3,8 +3,16 @@ Gotai's Instance Timer
 Simple timer to boast about in guild for moar epeen.
 
 **Changelog:
+1.1 -> 1.2
+Implemented a report function. Usage is more or less the same as showrecord.
+Usage:	'/git report' to display a list of records.
+	'/git report # chan' reports channel corresponding to # to chan.
+Currently allowed channels are: guild, party and raid. g,p and r may be used for short.
+
 1.0 -> 1.1
 Started work on a showrecords function. It seems to be working now, although I'm not sure if I'm happy with how it turned out.
+Usage: '/git showrecord' to display a list of records.
+       '/git showrecord #' to display record corresponding to #
 
 Beta -> 1.0
 Two months of no bugs warrants a push to 1.0 I reckon. Yay!
