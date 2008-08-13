@@ -147,11 +147,19 @@ local function GIT_SaveParty(zone, difficulty)
 	GIT_Records[zone][difficulty]["playername"] = UnitName("player")
 	GIT_Records[zone][difficulty]["playerclass"] = strjoin(",",UnitClass("player"))
 	
-	--Update party members. Saving localised class for display and not localised for coloring.
-	for i=1, GetNumPartyMembers() do
-		local name = UnitName("party"..i)
-		GIT_Records[zone][difficulty]["party"..i.."name"] = name
-		GIT_Records[zone][difficulty]["party"..i.."class"] = (name and strjoin(",", UnitClass("party"..i)) or nil)
+	local name
+	if GetNumRaidMembers() > 0 then
+		for i=1, GetNumRaidMembers() do
+			name = UnitName("raid"..i)
+			GIT_Records[zone][difficulty]["party"..i.."name"] = name
+			GIT_Records[zone][difficulty]["party"..i.."class"] = (name and strjoin(",", UnitClass("raid"..i)) or nil)
+		end
+	else
+		for i=1, GetNumPartyMembers() do
+			local name = UnitName("party"..i)
+			GIT_Records[zone][difficulty]["party"..i.."name"] = name
+			GIT_Records[zone][difficulty]["party"..i.."class"] = (name and strjoin(",", UnitClass("party"..i)) or nil)
+		end
 	end
 end
 
